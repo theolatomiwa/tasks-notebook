@@ -188,6 +188,47 @@ h1{font:400 46px/1.02 var(--serif);margin:8px 0 6px;letter-spacing:-.01em;overfl
 
 kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;color:var(--ink2)}
 
+/* ---------- account chip + sign-in panel ---------- */
+.acct{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--card);border-radius:12px;padding:8px 10px;margin:0 0 6px;cursor:pointer;text-align:left;
+  box-shadow:0 0 0 1px var(--line2);transition:background 120ms,transform 120ms var(--ease)}
+.acct:hover{background:#FDFCF9}
+.acct:active{transform:scale(.98)}
+.acct-av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 12px var(--sans);flex:none;overflow:hidden}
+.acct-av img{width:100%;height:100%;object-fit:cover}
+.acct-av.guest{background:#F1EDE5;color:var(--muted)}
+.acct-txt{display:flex;flex-direction:column;min-width:0}
+.acct-txt b{font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-txt small{font-size:11.5px;color:var(--muted)}
+.acct-txt small.s-saved{color:var(--work)}
+.acct-txt small.s-offline{color:var(--personal)}
+.auth-card{width:min(380px,100%);padding:20px 22px 22px}
+.auth-head{display:flex;justify-content:space-between;align-items:center}
+.auth-card h2{font:400 32px/1.05 var(--serif);margin:10px 0 4px;text-wrap:balance}
+.auth-sub{margin:0 0 16px;font-size:13.5px;color:var(--ink2);line-height:1.5}
+.g-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:42px;border:1px solid var(--line2);background:var(--card);border-radius:11px;
+  font-weight:500;font-size:14px;cursor:pointer;transition:background 120ms,transform 120ms var(--ease)}
+.g-btn:hover{background:#FAF8F4}
+.g-btn:active,.pill.wide:active{transform:scale(.98)}
+.or{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:12px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line2)}
+#authForm{display:flex;flex-direction:column;gap:10px}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:500;color:var(--ink2)}
+.fld input{height:40px;border:1px solid var(--line2);border-radius:10px;padding:0 12px;font-size:14px;background:#FCFBF8;outline:0;transition:border-color 120ms,box-shadow 120ms}
+.fld input:focus{border-color:#CDC5B7;box-shadow:0 0 0 3px #F1ECE3;background:var(--card)}
+.pill.wide{width:100%;height:42px;justify-content:center;font-size:14px;font-weight:500;margin-top:4px}
+.pill:disabled{opacity:.6;cursor:default}
+.auth-links{display:flex;justify-content:space-between;gap:10px;margin-top:12px}
+.auth-links button,.auth-switch button{border:0;background:none;padding:0;font-size:12.5px;color:var(--ink2);cursor:pointer;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
+.auth-links button:hover,.auth-switch button:hover{color:var(--ink);text-decoration-color:currentColor}
+.auth-switch{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line2);font-size:12.5px;color:var(--muted);text-align:center}
+.auth-msg{margin:12px 0 0;font-size:13px;line-height:1.45;padding:9px 11px;border-radius:9px;background:#F6F3ED;color:var(--ink2)}
+.auth-msg.err{background:var(--urgent-bg);color:#A63F2C}
+.auth-msg.ok{background:#E8F1E4;color:#3E6A39}
+.acct-card{display:grid;gap:10px;background:#F8F6F1;border-radius:12px;padding:12px 14px}
+.acct-card div{display:flex;justify-content:space-between;gap:12px;align-items:baseline;font-size:13px}
+.acct-card small{color:var(--muted)}
+.acct-card b{font-weight:500;overflow-wrap:anywhere;text-align:right}
+
 /* ---------- credit: sits in the margin under the notebook ---------- */
 .credit{position:fixed;left:50%;bottom:calc(5px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);z-index:2;
   font:500 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap;pointer-events:none}
@@ -417,10 +458,29 @@ kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;c
   </div>
 </div>
 <div class="toast" id="toast" role="status"><span id="toastMsg"></span><button id="toastBtn"></button></div>
+<div class="bk-pop" id="authPop" hidden>
+  <div class="bk-card auth-card" role="dialog" aria-labelledby="authTitle">
+    <div class="auth-head"><span class="kicker">Account</span><button class="b-x" data-auth="close" aria-label="Close">×</button></div>
+    <h2 id="authTitle">Sign in</h2>
+    <p class="auth-sub" id="authSub"></p>
+    <div id="authBody"></div>
+    <p class="auth-msg" id="authMsg" role="status"></p>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script>
 (() => {
-const KEY = 'tasks.v1';
+/* ---------- accounts (Supabase). Leave blank to run as a guest-only app. ---------- */
+const SUPABASE_URL = 'https://cvbqsuhhwuybrkdsgxtr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2YnFzdWhod3V5YnJrZHNneHRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDA3NjUsImV4cCI6MjExMDY3Njc2NX0.dw9UCb-69_OCvBwn-bN_3WRA6k1EYuVRMSKt1CSyTJk';   // the public "anon / publishable" key — safe to ship in the page
+const FRAMED = (() => { try { return window.top !== window; } catch (e) { return true; } })();
+const sb = SUPABASE_URL && SUPABASE_KEY && !FRAMED && window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, detectSessionInUrl: true } }) : null;
+const GUEST_KEY = 'tasks.v1';
+const acct = { user: null, status: 'guest', syncT: 0, lastRemote: '' };
+// open straight into the last signed-in account's cached tasks (no flash of guest data)
+let KEY = (() => { try { const u = sb && localStorage.getItem('tasks.lastUser'); return u ? GUEST_KEY + '.u.' + u : GUEST_KEY; } catch (e) { return GUEST_KEY; } })();
 let toastT, warned = false;
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
@@ -457,16 +517,19 @@ function seed() {
     mk({ title: 'Tick this step', parentId: w.id, createdAt: now + 1 }),
     mk({ title: 'Then this one — watch the parent', parentId: w.id, createdAt: now + 2 }),
     mk({ title: 'Send weekly report', area: 'work', person: 'Sarah', due: addDays(t, 1), urgent: true, createdAt: now + 3 }),
-  ]};
+  ].map(x => (x.seed = true, x))};   // example tasks; not copied into an account that already has tasks
 }
-function load() {
-  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.tasks)) { s.people ||= []; return s; } } catch (e) {}
-  return seed();
+const emptyState = () => ({ people: [], lastBackup: null, tasks: [] });
+function readStore(key) {
+  try { const s = JSON.parse(localStorage.getItem(key)); if (s && Array.isArray(s.tasks)) { s.people ||= []; return s; } } catch (e) {}
+  return null;
 }
+function load() { return readStore(KEY) || (KEY === GUEST_KEY ? seed() : emptyState()); }
 let state = load();
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); }
   catch (e) { if (!warned) { warned = true; setTimeout(() => toast('Couldn’t save — browser storage is blocked'), 0); } }
+  if (acct.user) scheduleSync();
 }
 save();
 
@@ -571,6 +634,7 @@ function renderSide() {
   const stale = state.lastBackup && Date.now() - state.lastBackup > 7 * 864e5;
   $('#side').innerHTML = `
     <div class="brand"><span class="mark"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.5 3 3 6-7"/></svg></span>Tasks</div>
+    ${acctChipHTML()}
     <nav class="nav">
       ${btn('today', IC.today, 'Today', n.today, overdue ? 'alert' : '')}
       ${btn('upcoming', IC.upcoming, 'Upcoming', n.upcoming)}
@@ -724,6 +788,7 @@ function closeEditor() {
 }
 
 function afterEdit(t) {
+  delete t.seed;
   save();
   if (!visible(t)) { closeEditor(); render(); toast(`Moved to ${whereIs(t)}`); }
   else render();
@@ -732,7 +797,7 @@ function afterEdit(t) {
 function toggle(id) {
   const t = get(id); if (!t) return;
   const snap = snapshot(), now = Date.now(), before = counts().today.length;
-  t.done = !t.done; t.doneAt = t.done ? now : null;
+  t.done = !t.done; t.doneAt = t.done ? now : null; delete t.seed;
   let msg = null;
   if (!t.parentId) {
     if (t.done) { children(id).forEach(c => { if (!c.done) { c.done = true; c.doneAt = now; } }); msg = 'Completed'; }
@@ -818,6 +883,7 @@ list.addEventListener('input', e => {
   if (el.matches('.ed-title, .btitle')) t.title = el.value;
   else if (el.matches('.ed-notes')) t.notes = el.value;
   else return;
+  delete t.seed;
   save();
 });
 list.addEventListener('change', e => {
@@ -861,6 +927,7 @@ function removePerson(p) {
 }
 $('#side').addEventListener('click', e => {
   const rm = e.target.closest('[data-rm]'); if (rm) { e.stopPropagation(); return removePerson(rm.dataset.rm); }
+  if (e.target.closest('[data-acct]')) return openAuth(acct.user ? 'account' : 'signin');
   const v = e.target.closest('[data-view]'); if (v) return setView(v.dataset.view);
   const s = e.target.closest('[data-side]'); if (!s) return;
   if (s.dataset.side === 'backup') backup();
@@ -1437,6 +1504,207 @@ setInterval(() => {
     buddy.say('It’s been a while since your last backup. Want to make one now?', { m: 'anxious', acts: [['Back up now', backup]] });
   }
 }, 60000);
+
+/* ================= ACCOUNTS + SYNC ================= */
+// One row per person in `notebooks` holds their whole task list; this browser keeps a cached copy.
+const SYNC_LABEL = { guest: 'Sign in to sync devices', loading: 'Loading your tasks…', pending: 'Saving…', saving: 'Saving…', saved: 'Synced', offline: 'Offline · saved on this device' };
+function acctChipHTML() {
+  if (!sb) return '';
+  const u = acct.user;
+  if (!u) return `<button class="acct" data-acct><span class="acct-av guest"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="5.5" r="2.6"/><path d="M2.8 14a5.2 5.2 0 0 1 10.4 0"/></svg></span><span class="acct-txt"><b>Guest</b><small id="acctSub">${SYNC_LABEL.guest}</small></span></button>`;
+  const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email || 'You';
+  const [b, f] = pc(name);
+  const av = u.user_metadata?.avatar_url
+    ? `<img src="${esc(u.user_metadata.avatar_url)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase());
+  return `<button class="acct" data-acct><span class="acct-av" style="background:${b};color:${f}">${av}</span><span class="acct-txt"><b>${esc(name)}</b><small id="acctSub" class="s-${acct.status}">${SYNC_LABEL[acct.status] || ''}</small></span></button>`;
+}
+function setSync(s) {
+  acct.status = s;
+  const el = document.getElementById('acctSub');
+  if (el) { el.textContent = SYNC_LABEL[s] || ''; el.className = 's-' + s; }
+  if (!$('#authPop').hidden && authMode === 'account') $('#acctState').textContent = SYNC_LABEL[s] || '';
+}
+const flagKey = () => KEY + '.dirty';
+function scheduleSync() {
+  try { localStorage.setItem(flagKey(), '1'); } catch (e) {}
+  setSync('pending');
+  clearTimeout(acct.syncT); acct.syncT = setTimeout(pushRemote, 1200);
+}
+async function pushRemote() {
+  if (!acct.user) return;
+  clearTimeout(acct.syncT);
+  setSync('saving');
+  const at = new Date().toISOString();
+  const { error } = await sb.from('notebooks').upsert({ user_id: acct.user.id, data: state, updated_at: at });
+  if (error) { setSync('offline'); acct.syncT = setTimeout(pushRemote, 30000); return; }
+  acct.lastRemote = at;
+  try { localStorage.removeItem(flagKey()); } catch (e) {}
+  setSync('saved');
+}
+async function pullRemote() {
+  const { data, error } = await sb.from('notebooks').select('data, updated_at').eq('user_id', acct.user.id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+function useState(s) { state = s; state.people ||= []; ui.expanded = null; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} render(); }
+
+async function startAccount(user) {
+  const fromGuest = KEY === GUEST_KEY, guest = fromGuest ? state : null;
+  acct.user = user;
+  KEY = GUEST_KEY + '.u.' + user.id;
+  try { localStorage.setItem('tasks.lastUser', user.id); } catch (e) {}
+  const cache = readStore(KEY), dirty = (() => { try { return !!localStorage.getItem(flagKey()); } catch (e) { return false; } })();
+  if (cache) useState(cache);
+  renderSide(); setSync('loading');
+  let row = null, online = true;
+  try { row = await pullRemote(); } catch (e) { online = false; }
+  let next = dirty && cache ? cache : row?.data || cache || emptyState();
+  if (row) acct.lastRemote = row.updated_at;
+  // bring tasks made on this device as a guest into the account
+  let moved = 0;
+  if (guest) {
+    const realGuest = guest.tasks.filter(t => !t.seed);
+    if (!next.tasks.length) { next = guest; moved = realGuest.filter(t => !t.parentId).length; }
+    else if (realGuest.length) {
+      const ids = new Set(next.tasks.map(t => t.id)), add = realGuest.filter(t => !ids.has(t.id));
+      next.tasks.push(...add); moved = add.filter(t => !t.parentId).length;
+      next.people = [...new Set([...(next.people || []), ...(guest.people || [])])];
+    }
+    try { localStorage.setItem(GUEST_KEY, JSON.stringify(emptyState())); } catch (e) {}
+  }
+  useState(next);
+  if (!online) return setSync('offline');
+  if (dirty || moved || !row) await pushRemote(); else setSync('saved');
+  if (moved) toast(`Moved ${moved} task${moved > 1 ? 's' : ''} from this device into your account`);
+}
+function endAccount() {
+  clearTimeout(acct.syncT);
+  acct.user = null; acct.status = 'guest';
+  try {
+    localStorage.removeItem('tasks.lastUser');
+    // don't leave a copy of this person's tasks on a shared computer, unless it hasn't reached the cloud yet
+    if (!localStorage.getItem(flagKey())) localStorage.removeItem(KEY);
+  } catch (e) {}
+  KEY = GUEST_KEY;
+  useState(readStore(GUEST_KEY) || emptyState());
+}
+// pick up changes made on another device when you come back to this tab
+async function refreshFromRemote() {
+  if (!acct.user || acct.status === 'pending' || acct.status === 'saving') return;
+  try {
+    const row = await pullRemote();
+    if (row && row.updated_at !== acct.lastRemote && !$('.task.expanded')) { acct.lastRemote = row.updated_at; useState(row.data); }
+    setSync('saved');
+  } catch (e) { setSync('offline'); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFromRemote(); });
+addEventListener('online', () => { if (acct.user) pushRemote(); });
+
+/* ---------- sign-in panel ---------- */
+let authMode = 'signin', authEmail = '';
+const G_LOGO = '<svg viewBox="0 0 18 18" width="16" height="16"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>';
+const AUTH_VIEWS = {
+  signin: { title: 'Welcome back', sub: 'Sign in and your tasks follow you to every device.' },
+  signup: { title: 'Create your account', sub: 'Free. Your tasks sync across your devices, and anything on this device comes with you.' },
+  magic: { title: 'Sign in with a link', sub: 'We’ll email you a link. Click it and you’re in, no password needed.' },
+  reset: { title: 'Reset your password', sub: 'We’ll email you a link to choose a new password.' },
+  newpass: { title: 'Choose a new password', sub: 'At least 8 characters.' },
+  account: { title: 'Your account', sub: '' },
+};
+function authBodyHTML(m) {
+  const email = `<label class="fld">Email<input type="email" id="authEmail" autocomplete="email" required value="${esc(authEmail)}" placeholder="you@example.com"></label>`;
+  const pass = ac => `<label class="fld">Password<input type="password" id="authPass" autocomplete="${ac}" required minlength="${ac === 'current-password' ? 6 : 8}" placeholder="${ac === 'current-password' ? '' : 'At least 8 characters'}"></label>`;
+  const google = `<button class="g-btn" type="button" data-auth="google">${G_LOGO}Continue with Google</button><div class="or"><span>or</span></div>`;
+  const back = `<div class="auth-links"><button type="button" data-auth="signin">Back to sign in</button></div>`;
+  if (m === 'signin') return `${google}<form id="authForm">${email}${pass('current-password')}<button class="pill primary wide" type="submit">Sign in</button></form>
+    <div class="auth-links"><button type="button" data-auth="magic">Email me a sign-in link</button><button type="button" data-auth="reset">Forgot password?</button></div>
+    <div class="auth-switch">New here? <button type="button" data-auth="signup">Create an account</button></div>`;
+  if (m === 'signup') return `${google}<form id="authForm">${email}${pass('new-password')}<button class="pill primary wide" type="submit">Create account</button></form>
+    <div class="auth-switch">Already have an account? <button type="button" data-auth="signin">Sign in</button></div>`;
+  if (m === 'magic') return `<form id="authForm">${email}<button class="pill primary wide" type="submit">Send sign-in link</button></form>${back}`;
+  if (m === 'reset') return `<form id="authForm">${email}<button class="pill primary wide" type="submit">Send reset link</button></form>${back}`;
+  if (m === 'newpass') return `<form id="authForm">${pass('new-password')}<button class="pill primary wide" type="submit">Save new password</button></form>`;
+  const u = acct.user, open = state.tasks.filter(t => !t.parentId && !t.done).length;
+  return `<div class="acct-card"><div><small>Signed in as</small><b>${esc(u.email || '')}</b></div>
+    <div><small>Sync</small><b id="acctState">${SYNC_LABEL[acct.status] || ''}</b></div>
+    <div><small>Open tasks</small><b>${open}</b></div></div>
+    <div class="bk-acts"><button class="pill ghost" type="button" data-auth="signout">Sign out</button><button class="pill primary" type="button" data-auth="syncnow">Sync now</button></div>`;
+}
+function openAuth(m, msg = '') {
+  authMode = m;
+  const v = AUTH_VIEWS[m];
+  $('#authTitle').textContent = v.title;
+  $('#authSub').textContent = v.sub; $('#authSub').hidden = !v.sub;
+  $('#authBody').innerHTML = authBodyHTML(m);
+  authMsg(msg);
+  $('#authPop').hidden = false;
+  const f = $('#authEmail') && !authEmail ? $('#authEmail') : $('#authPass') || $('#authEmail');
+  f?.focus();
+}
+const closeAuth = () => { $('#authPop').hidden = true; };
+function authMsg(text, kind = '') { const el = $('#authMsg'); el.textContent = text; el.className = 'auth-msg ' + kind; el.hidden = !text; }
+const nice = e => ({
+  'Invalid login credentials': 'That email and password don’t match. Try again, or use “Forgot password?”.',
+  'Email not confirmed': 'Please confirm your email first. Check your inbox for the link we sent.',
+  'User already registered': 'There’s already an account with this email. Sign in instead.',
+}[e?.message] || e?.message || 'Something went wrong. Check your connection and try again.');
+const back = () => location.origin + location.pathname;
+
+$('#authPop').addEventListener('mousedown', e => { if (e.target.id === 'authPop') closeAuth(); });
+$('#authPop').addEventListener('input', e => { if (e.target.id === 'authEmail') authEmail = e.target.value.trim(); });
+$('#authPop').addEventListener('click', async e => {
+  const b = e.target.closest('[data-auth]'); if (!b) return;
+  const a = b.dataset.auth;
+  if (a === 'close') return closeAuth();
+  if (['signin', 'signup', 'magic', 'reset'].includes(a)) return openAuth(a);
+  if (a === 'google') {
+    authMsg('Opening Google…');
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: back() } });
+    if (error) authMsg(nice(error), 'err');
+  }
+  if (a === 'signout') { b.disabled = true; await pushRemote(); await sb.auth.signOut(); closeAuth(); toast('Signed out. Your tasks are safe in your account.'); }
+  if (a === 'syncnow') { await pushRemote(); await refreshFromRemote(); }
+});
+$('#authPop').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]'), label = btn.textContent;
+  const email = $('#authEmail')?.value.trim(), password = $('#authPass')?.value;
+  if (email) authEmail = email;
+  btn.disabled = true; btn.textContent = 'One moment…'; authMsg('');
+  let r;
+  try {
+    if (authMode === 'signin') r = await sb.auth.signInWithPassword({ email, password });
+    if (authMode === 'signup') r = await sb.auth.signUp({ email, password, options: { emailRedirectTo: back() } });
+    if (authMode === 'magic') r = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: back() } });
+    if (authMode === 'reset') r = await sb.auth.resetPasswordForEmail(email, { redirectTo: back() });
+    if (authMode === 'newpass') r = await sb.auth.updateUser({ password });
+  } catch (err) { r = { error: err }; }
+  btn.disabled = false; btn.textContent = label;
+  if (r?.error) return authMsg(nice(r.error), 'err');
+  if (authMode === 'signup' && !r.data.session) return authMsg(`Almost done. We sent a confirmation link to ${email}. Click it, then you’re signed in.`, 'ok');
+  if (authMode === 'magic') return authMsg(`Check ${email} for your sign-in link.`, 'ok');
+  if (authMode === 'reset') return authMsg(`Check ${email} for a link to reset your password.`, 'ok');
+  if (authMode === 'newpass') { closeAuth(); return toast('Password updated'); }
+  closeAuth();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#authPop').hidden) closeAuth(); });
+
+if (sb) {
+  sb.auth.onAuthStateChange((event, session) => {
+    // run outside the auth callback (Supabase recommends not awaiting its calls inside it)
+    setTimeout(async () => {
+      if (event === 'PASSWORD_RECOVERY') openAuth('newpass');
+      const u = session?.user || null;
+      if (u && acct.user?.id !== u.id) {
+        await startAccount(u);
+        if (event === 'SIGNED_IN') { buddy.say(`You’re signed in. Your tasks now sync across your devices.`, { m: 'happy', ms: 6000 }); }
+      } else if (!u && (acct.user || KEY !== GUEST_KEY)) endAccount();
+      if (u) acct.user = u, renderSide();
+      // tidy the address bar after an email or Google redirect
+      if (/access_token|code=|error_description/.test(location.href) && event !== 'PASSWORD_RECOVERY') history.replaceState(null, '', back());
+    }, 0);
+  });
+}
 
 qaDefaults();
 render();
