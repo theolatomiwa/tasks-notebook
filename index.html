@@ -188,6 +188,14 @@ h1{font:400 46px/1.02 var(--serif);margin:8px 0 6px;letter-spacing:-.01em;overfl
 
 kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;color:var(--ink2)}
 
+/* ---------- credit: sits in the margin under the notebook ---------- */
+.credit{position:fixed;left:50%;bottom:calc(5px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);z-index:2;
+  font:500 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap;pointer-events:none}
+.credit b{font-weight:500;color:var(--ink2)}
+@media (max-width:780px){
+  .credit{position:static;transform:none;text-align:center;padding:14px 16px 96px}
+}
+
 /* ---------- backup / restore panel ---------- */
 .bk-pop{position:fixed;inset:0;z-index:40;background:rgba(40,32,20,.18);display:grid;place-items:center;padding:16px;animation:fade 160ms var(--ease)}
 .bk-card{width:min(440px,100%);background:var(--card);border-radius:18px;padding:18px;box-shadow:0 0 0 1px var(--line2),0 24px 50px -18px rgba(60,48,25,.4);animation:popin 200ms var(--ease)}
@@ -397,6 +405,7 @@ kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;c
       <span class="zz">z</span></span>
   </button>
 </div>
+<div class="credit">Built by <b>Olatomiwa Olarinde</b></div>
 <datalist id="peopleList"></datalist>
 <input type="file" id="restoreFile" accept="application/json,.json,.txt" hidden>
 <div class="bk-pop" id="bkPop" hidden>
