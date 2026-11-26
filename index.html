@@ -237,34 +237,15 @@ kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;c
   .credit{position:static;transform:none;text-align:center;padding:14px 16px 96px}
 }
 
-/* ---------- backup / restore panel ---------- */
+/* ---------- modal panel (used by the sign-in panel) ---------- */
 .bk-pop{position:fixed;inset:0;z-index:40;background:rgba(40,32,20,.18);display:grid;place-items:center;padding:16px;animation:fade 160ms var(--ease)}
 .bk-card{width:min(440px,100%);background:var(--card);border-radius:18px;padding:18px;box-shadow:0 0 0 1px var(--line2),0 24px 50px -18px rgba(60,48,25,.4);animation:popin 200ms var(--ease)}
 .bk-card p{margin:6px 0 12px;font-size:13.5px;color:var(--ink2);line-height:1.5}
-.bk-card textarea{display:block;width:100%;height:120px;border:0;outline:0;border-radius:10px;background:#F8F6F1;padding:10px 12px;font:11.5px/1.45 var(--mono);color:var(--ink2);resize:vertical}
 .bk-acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;margin-top:12px}
 .pill.primary{background:var(--ink);border-color:var(--ink);color:#fff}
 .pill.primary:hover{background:#3A3732}
 
-/* ---------- sound picker ---------- */
-.snd-btn{display:flex;align-items:center;gap:6px;margin-top:10px;border:0;background:none;padding:2px 0;font-size:12px;color:var(--muted);cursor:pointer}
-.snd-btn b{font-weight:500;color:var(--ink2)}
-.snd-btn:hover b{text-decoration:underline}
-.snd-pop{position:fixed;z-index:25;width:286px;background:var(--card);border-radius:16px;padding:8px;
-  box-shadow:0 0 0 1px var(--line2),0 18px 40px -16px rgba(60,48,25,.35);animation:popin 180ms var(--ease);transform-origin:bottom left}
-.snd-pop[hidden]{display:none}
 @keyframes popin{from{opacity:0;transform:translateY(4px) scale(.97)}}
-.snd-row{display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;padding:8px;border-radius:10px;cursor:pointer;text-align:left;transition:background 120ms}
-.snd-row:hover{background:var(--hover)}
-.snd-row.on{background:#F6F2EA}
-.snd-play{width:28px;height:28px;border-radius:50%;background:#F1EDE5;display:grid;place-items:center;color:var(--ink2);flex:none;transition:transform 120ms var(--ease)}
-.snd-row:active .snd-play{transform:scale(.9)}
-.snd-row.on .snd-play{background:var(--ink);color:#fff}
-.snd-txt{flex:1;min-width:0;display:flex;flex-direction:column}
-.snd-txt b{font-weight:500;font-size:13.5px}
-.snd-txt small{font-size:11.5px;color:var(--muted)}
-.snd-check{width:14px;color:var(--ink)}
-.snd-foot{font-size:11px;color:var(--muted);padding:8px 8px 4px;border-top:1px dashed var(--line2);margin-top:4px}
 
 /* ---------- pomodoro card ---------- */
 .pomo-card{background:var(--card);border-radius:13px;padding:12px;box-shadow:0 0 0 1px var(--line2),0 1px 2px rgba(0,0,0,.03)}
@@ -448,15 +429,6 @@ kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;c
 </div>
 <div class="credit">Built by <b>Olatomiwa Olarinde</b></div>
 <datalist id="peopleList"></datalist>
-<input type="file" id="restoreFile" accept="application/json,.json,.txt" hidden>
-<div class="bk-pop" id="bkPop" hidden>
-  <div class="bk-card" role="dialog" aria-labelledby="bkKick">
-    <div class="kicker" id="bkKick">Back up</div>
-    <p id="bkMsg"></p>
-    <textarea id="bkText" spellcheck="false" aria-label="Backup text"></textarea>
-    <div class="bk-acts" id="bkActs"></div>
-  </div>
-</div>
 <div class="toast" id="toast" role="status"><span id="toastMsg"></span><button id="toastBtn"></button></div>
 <div class="bk-pop" id="authPop" hidden>
   <div class="bk-card auth-card" role="dialog" aria-labelledby="authTitle">
@@ -471,6 +443,11 @@ kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;c
 
 <script>
 (() => {
+/* ---------- owner settings ---------- */
+// The sound everyone hears when they tick a task. Only the owner changes this (edit, commit, push).
+// Options: 'kalimba', 'chime', 'marimba', 'bubble', 'sparkle', 'coin', 'tick', 'off'
+const COMPLETION_SOUND = 'kalimba';
+
 /* ---------- accounts (Supabase). Leave blank to run as a guest-only app. ---------- */
 const SUPABASE_URL = 'https://cvbqsuhhwuybrkdsgxtr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2YnFzdWhod3V5YnJrZHNneHRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDA3NjUsImV4cCI6MjExMDY3Njc2NX0.dw9UCb-69_OCvBwn-bN_3WRA6k1EYuVRMSKt1CSyTJk';   // the public "anon / publishable" key — safe to ship in the page
@@ -628,10 +605,6 @@ function renderSide() {
   const btn = (v, ico, name, count, cls = '', extra = '') =>
     `<button class="${ui.view === v ? 'on' : ''}" data-view="${esc(v)}"><span class="ico">${ico}</span><span class="name">${esc(name)}</span><span class="count ${cls}">${count || ''}</span>${extra}</button>`;
   const people = [...state.people].sort((a, b) => a.localeCompare(b));
-  const backup = state.lastBackup
-    ? `Last backup ${fmtDue(ymd(new Date(state.lastBackup))).toLowerCase()}`
-    : `<span class="warn">Not backed up yet</span>`;
-  const stale = state.lastBackup && Date.now() - state.lastBackup > 7 * 864e5;
   $('#side').innerHTML = `
     <div class="brand"><span class="mark"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.5 3 3 6-7"/></svg></span>Tasks</div>
     ${acctChipHTML()}
@@ -661,11 +634,6 @@ function renderSide() {
       </div>
       <div class="pc-btns"><button class="pill small" data-pomo="toggle" id="pcToggle"></button><button class="pill small ghost" data-pomo="reset">Reset</button></div>
       <div class="pc-stat" id="pcStat"></div>
-    </div>
-    <div class="side-foot">
-      <div>${stale ? '<span class="warn">' + backup + '</span>' : backup}</div>
-      <div class="btns"><button class="pill small" data-side="backup">Back up</button><button class="pill small ghost" data-side="restore">Restore</button></div>
-      <button class="snd-btn" data-side="sound" title="Choose completion sound"><svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6v4h2.5l3.5 3V3L5 6z"/>${prefs.sound === 'off' ? '<path d="m11 6.5 3 3M14 6.5l-3 3"/>' : '<path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.8a6 6 0 0 1 0 8.4"/>'}</svg>Sound: <b>${SOUNDS[prefs.sound].name}</b></button>
     </div>`;
   $('#peopleList').innerHTML = people.map(p => `<option value="${esc(p)}">`).join('');
   paintPomo(true);
@@ -929,10 +897,6 @@ $('#side').addEventListener('click', e => {
   const rm = e.target.closest('[data-rm]'); if (rm) { e.stopPropagation(); return removePerson(rm.dataset.rm); }
   if (e.target.closest('[data-acct]')) return openAuth(acct.user ? 'account' : 'signin');
   const v = e.target.closest('[data-view]'); if (v) return setView(v.dataset.view);
-  const s = e.target.closest('[data-side]'); if (!s) return;
-  if (s.dataset.side === 'backup') backup();
-  else if (s.dataset.side === 'sound') sndPop.hidden ? openSoundPop(s) : (sndPop.hidden = true);
-  else openRestore();
 });
 $('#head').addEventListener('click', e => {
   if (!e.target.closest('[data-head="clear"]')) return;
@@ -941,65 +905,6 @@ $('#head').addEventListener('click', e => {
   save(); render(); toast(`Cleared ${doneIds.size} done`, () => restore(snap));
 });
 
-/* Desktop file: backups download as a .json file. On the web (shared link) downloads are blocked,
-   so the backup is shown as text to copy instead. Restore always goes through the panel. */
-// downloads work when the app is opened directly (desktop file or its own website like Vercel),
-// but not when it's embedded in a frame (the claude.ai link)
-const LOCAL = (() => { try { return location.protocol === 'file:' || window.top === window; } catch (e) { return false; } })();
-const bk = { pop: $('#bkPop'), msg: $('#bkMsg'), text: $('#bkText'), acts: $('#bkActs'), kick: $('#bkKick') };
-function openPanel(kick, msg, value, readOnly, acts) {
-  bk.kick.textContent = kick; bk.msg.textContent = msg;
-  bk.text.value = value; bk.text.readOnly = readOnly;
-  bk.acts.innerHTML = acts.map((a, i) => `<button class="pill${a[2] ? ' primary' : ' ghost'}" data-bk="${i}">${esc(a[0])}</button>`).join('');
-  bk.handlers = acts.map(a => a[1]);
-  bk.pop.hidden = false;
-  (readOnly ? bk.acts.querySelector('.primary') : bk.text)?.focus();
-}
-const closePanel = () => { bk.pop.hidden = true; };
-bk.acts.addEventListener('click', e => { const b = e.target.closest('[data-bk]'); if (b) bk.handlers[+b.dataset.bk](); });
-bk.pop.addEventListener('mousedown', e => { if (e.target === bk.pop) closePanel(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !bk.pop.hidden) closePanel(); });
-
-function markBackedUp() { state.lastBackup = Date.now(); save(); renderSide(); buddy.mood('happy', 1800); }
-function backup() {
-  const json = JSON.stringify(state);
-  if (LOCAL) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
-    a.download = `tasks-backup-${today()}.json`; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    markBackedUp(); toast('Backup saved to your Downloads');
-    return;
-  }
-  openPanel('Back up', 'Copy this text and keep it somewhere safe, like a note or an email to yourself. To get your tasks back, paste it into Restore.', json, true, [
-    ['Close', closePanel],
-    ['Copy backup', async () => {
-      try { await navigator.clipboard.writeText(json); markBackedUp(); closePanel(); toast('Backup copied'); }
-      catch (err) { bk.text.focus(); bk.text.select(); bk.msg.textContent = 'Couldn’t copy automatically. The text is selected: press Ctrl+C to copy it.'; markBackedUp(); }
-    }, true],
-  ]);
-}
-function applyRestore(raw) {
-  let s;
-  try { s = JSON.parse(raw); if (!s || !Array.isArray(s.tasks)) throw 0; }
-  catch (err) { bk.msg.textContent = 'That isn’t a tasks backup. Paste the full text you copied from Back up, or choose a backup file.'; return; }
-  const prev = JSON.stringify(state);
-  state = { people: s.people || [], lastBackup: s.lastBackup || null, tasks: s.tasks };
-  ui.expanded = null; save(); render(); closePanel();
-  toast(`Restored ${s.tasks.filter(t => !t.parentId).length} tasks`, () => { state = JSON.parse(prev); save(); render(); });
-}
-function openRestore() {
-  openPanel('Restore', 'Paste a backup below, or choose a backup file. This replaces the tasks you have now (you can undo right after).', '', false, [
-    ['Cancel', closePanel],
-    ['Choose file…', () => $('#restoreFile').click()],
-    ['Replace my tasks', () => applyRestore(bk.text.value), true],
-  ]);
-}
-$('#restoreFile').addEventListener('change', async e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  bk.text.value = await f.text();
-  bk.msg.textContent = `Loaded “${f.name}”. Click Replace my tasks to use it.`;
-});
 
 /* ---------- quick add ---------- */
 const qa = $('#qa'), qaS = { area: 'personal', person: '', due: '', urgent: false };
@@ -1135,40 +1040,10 @@ const SOUNDS = {
   } },
   off: { name: 'No sound', desc: 'Confetti only', play() {} },
 };
-const PREFK = 'tasks.prefs';
-let prefs = (() => { try { return Object.assign({ sound: 'kalimba' }, JSON.parse(localStorage.getItem(PREFK)) || {}); } catch (e) { return { sound: 'kalimba' }; } })();
-if (!SOUNDS[prefs.sound]) prefs.sound = 'kalimba';
-const savePrefs = () => { try { localStorage.setItem(PREFK, JSON.stringify(prefs)); } catch (e) {} };
-function doneSound(big, key = prefs.sound) {
+function doneSound(big) {
   ensureAudio(); if (!ac) return;
-  try { SOUNDS[key].play(big); } catch (e) {}
+  try { (SOUNDS[COMPLETION_SOUND] || SOUNDS.kalimba).play(big); } catch (e) {}
 }
-
-/* sound picker */
-const sndPop = document.createElement('div'); sndPop.className = 'snd-pop'; sndPop.hidden = true; document.body.appendChild(sndPop);
-function paintSoundPop() {
-  sndPop.innerHTML = `<div class="kicker" style="padding:4px 8px 8px">Completion sound</div>` +
-    Object.entries(SOUNDS).map(([k, s]) => `<button class="snd-row${k === prefs.sound ? ' on' : ''}" data-snd="${k}">
-      <span class="snd-play">${k === 'off' ? '–' : PLAY}</span>
-      <span class="snd-txt"><b>${s.name}</b><small>${s.desc}</small></span>
-      <span class="snd-check">${k === prefs.sound ? '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.5 3 3 6-7"/></svg>' : ''}</span></button>`).join('') +
-    `<div class="snd-foot">Click to hear it. Steps play a shorter version.</div>`;
-}
-function openSoundPop(btn) {
-  paintSoundPop(); sndPop.hidden = false;
-  const r = btn.getBoundingClientRect(), h = sndPop.offsetHeight, w = sndPop.offsetWidth;
-  sndPop.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
-  sndPop.style.top = Math.max(12, r.top - h - 8 < 12 ? r.bottom + 8 : r.top - h - 8) + 'px';
-}
-sndPop.addEventListener('click', e => {
-  const b = e.target.closest('[data-snd]'); if (!b) return;
-  const r = b.querySelector('.snd-play').getBoundingClientRect();
-  prefs.sound = b.dataset.snd; savePrefs(); paintSoundPop(); renderSide();
-  doneSound(true);
-  if (prefs.sound !== 'off' && !calm.matches) confetti(r.left + r.width / 2, r.top + r.height / 2, 22);
-});
-document.addEventListener('mousedown', e => { if (!sndPop.hidden && !e.target.closest('.snd-pop, [data-side="sound"]')) sndPop.hidden = true; });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') sndPop.hidden = true; });
 
 const cv = document.createElement('canvas'); cv.id = 'confetti'; document.body.appendChild(cv);
 const cx2 = cv.getContext('2d');
@@ -1499,10 +1374,6 @@ setInterval(() => {
   if (B.activeMs >= 75 * 60000) { B.activeMs = 0; return buddy.say(pick(BREAKS), { m: 'happy', ms: 12000 }); }
   const c = counts();
   if (now - bud.lastNudge >= 30 * 60000 && (c.over.length || c.today.length)) return nudge(c);
-  if ((!state.lastBackup || now - state.lastBackup > 7 * 864e5) && bud.backupDay !== today() && now - B.openedAt > 10 * 60000) {
-    bud.backupDay = today(); saveBud();
-    buddy.say('It’s been a while since your last backup. Want to make one now?', { m: 'anxious', acts: [['Back up now', backup]] });
-  }
 }, 60000);
 
 /* ================= ACCOUNTS + SYNC ================= */
