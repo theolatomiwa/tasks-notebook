@@ -233,6 +233,12 @@ kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;c
 .credit{position:fixed;left:50%;bottom:calc(5px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);z-index:2;
   font:500 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap;pointer-events:none}
 .credit b{font-weight:500;color:var(--ink2)}
+.credit .sep{margin:0 8px;color:#C9C2B6}
+.credit a{pointer-events:auto;color:var(--muted);text-decoration:none;border-radius:3px}
+.credit a:hover{color:var(--ink2);text-decoration:underline;text-underline-offset:3px}
+.auth-legal{margin:14px 0 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5}
+.auth-legal a{color:var(--ink2);text-underline-offset:3px;text-decoration-color:var(--line2)}
+.auth-legal a:hover{text-decoration-color:currentColor}
 @media (max-width:780px){
   .credit{position:static;transform:none;text-align:center;padding:14px 16px 96px}
 }
@@ -427,7 +433,7 @@ kbd{font:11px var(--mono);background:#F2EEE6;border-radius:5px;padding:1px 5px;c
       <span class="zz">z</span></span>
   </button>
 </div>
-<div class="credit">Built by <b>Olatomiwa Olarinde</b></div>
+<div class="credit">Built by <b>Olatomiwa Olarinde</b><span class="sep">·</span><a href="https://tasks-notebook.vercel.app/terms" target="_blank" rel="noopener">Terms</a><span class="sep">·</span><a href="https://tasks-notebook.vercel.app/privacy" target="_blank" rel="noopener">Privacy</a></div>
 <datalist id="peopleList"></datalist>
 <div class="toast" id="toast" role="status"><span id="toastMsg"></span><button id="toastBtn"></button></div>
 <div class="bk-pop" id="authPop" hidden>
@@ -1481,6 +1487,7 @@ if (sb) fetch(SUPABASE_URL + '/auth/v1/settings', { headers: { apikey: SUPABASE_
     if (googleOn && !$('#authPop').hidden && ['signin', 'signup'].includes(authMode)) openAuth(authMode);
   }).catch(() => {});
 const G_LOGO = '<svg viewBox="0 0 18 18" width="16" height="16"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>';
+const LEGAL = '<p class="auth-legal">By continuing, you agree to the <a href="https://tasks-notebook.vercel.app/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="https://tasks-notebook.vercel.app/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>';
 const AUTH_VIEWS = {
   signin: { title: 'Welcome back', sub: 'Sign in and your tasks follow you to every device.' },
   signup: { title: 'Create your account', sub: 'Free. Your tasks sync across your devices, and anything on this device comes with you.' },
@@ -1496,9 +1503,9 @@ function authBodyHTML(m) {
   const back = `<div class="auth-links"><button type="button" data-auth="signin">Back to sign in</button></div>`;
   if (m === 'signin') return `${google}<form id="authForm">${email}${pass('current-password')}<button class="pill primary wide" type="submit">Sign in</button></form>
     <div class="auth-links"><button type="button" data-auth="magic">Email me a sign-in link</button><button type="button" data-auth="reset">Forgot password?</button></div>
-    <div class="auth-switch">New here? <button type="button" data-auth="signup">Create an account</button></div>`;
+    <div class="auth-switch">New here? <button type="button" data-auth="signup">Create an account</button></div>${LEGAL}`;
   if (m === 'signup') return `${google}<form id="authForm">${email}${pass('new-password')}<button class="pill primary wide" type="submit">Create account</button></form>
-    <div class="auth-switch">Already have an account? <button type="button" data-auth="signin">Sign in</button></div>`;
+    <div class="auth-switch">Already have an account? <button type="button" data-auth="signin">Sign in</button></div>${LEGAL}`;
   if (m === 'magic') return `<form id="authForm">${email}<button class="pill primary wide" type="submit">Send sign-in link</button></form>${back}`;
   if (m === 'reset') return `<form id="authForm">${email}<button class="pill primary wide" type="submit">Send reset link</button></form>${back}`;
   if (m === 'newpass') return `<form id="authForm">${pass('new-password')}<button class="pill primary wide" type="submit">Save new password</button></form>`;
